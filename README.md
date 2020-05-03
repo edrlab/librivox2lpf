@@ -20,13 +20,21 @@ In order to test such apps, and also for proving to the industry that generating
 
 Python 3.5+ is required for using this command-line interface tool.
 
-After clone the project, install the following dependencies: 
+After cloning the project, install the following dependencies: 
 
 ```
 pip install lxml
 pip install jsons
 pip install jsonschema
 ```
+
+### Notes
+
+Why using the RSS feed provided by Librivox? 
+This is an xml file, easy to download from each Librivox web page. The Internet Archive has an API which enable fetching a JSON Readium WebPub Manifest but the implementation is still in beta.   
+
+Why using jsons?
+`jsons` is much easier to use than the natif json lib for marshalling JSON from Python objects. 
 
 ## Usage
 
@@ -46,7 +54,7 @@ pip install jsonschema
 From the directory which contains the cloned project, type:
 
 '''
-python3 librivox2lpf <filePath>
+python3 librivox2lpf.py &lt;filePath>
 '''
 
 Where `filePath`is the directory in which you have saved the zip file, xml file and cover image. 
@@ -63,7 +71,7 @@ lpf packaged publication generated
 
 The three source files have been replaced by a `.lpf` file. 
 
-If you have installed Thorium Reader, you can double-click on this file, select Thorium Reader and the file will directly be played. An alternative is to open Thorium Reader and drag&drop the audiobook into its user interface.  
+If you have installed Thorium Reader, you can double-click on this file, select Thorium Reader and the file will directly be played. An alternative is to open Thorium Reader and drag&drop the audiobook.  
 
 
 
