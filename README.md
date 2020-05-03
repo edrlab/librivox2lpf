@@ -1,6 +1,6 @@
 # W3C Audiobooks Generator from Librivox content
 
-Command-line interface tool written in Python 3, useful for generating W3C Audiobooks packaged in LPF format out of content download from the Librivox website. 
+Command-line interface tool written in Python 3, useful for generating W3C Audiobooks packaged in LPF format out of content downloaded from the Librivox website. 
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](/LICENSE)
 
