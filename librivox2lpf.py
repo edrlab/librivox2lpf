@@ -44,7 +44,7 @@ MediaType = {
 
 
 
-def getStrProperty(xdoc, xpath):
+def getStrProperty(item, xpath, nsmap=None):
   """Get a string property found at the location specified by an XPath locator.
       The xpath can point to xml elements or attributes.
 
@@ -52,24 +52,22 @@ def getStrProperty(xdoc, xpath):
       (which is bad) with extra spaces (which is also bad), therefore the string 
       must be cleaned before being returned """
  
-  values = xdoc.xpath(xpath)
+  values = item.xpath(xpath, namespaces=nsmap)
   if len(values) == 0:
-    return None
+    return ""
   return values[0].text.strip() if isinstance(values[0], etree._Element) else values[0]
 
 
 
-def getStrProperties(xdoc, xpath):
+def getStrProperties(item, xpath, nsmap=None):
   """Get an array of string properties found at the location specified by an XPath locator.
       The xpath can point to xml elements or attributes."""
  
-  values = xdoc.xpath(xpath)
-  if len(values) == 0:
-    print("Nothing found at ", xpath)
-    return None
   array = []
-  for v in values:
-    array.append(v.text.strip() if isinstance(v, etree._Element) else v)
+  values = item.xpath(xpath, namespaces=nsmap)
+  if len(values) > 0:
+    for v in values:
+      array.append(v.text.strip() if isinstance(v, etree._Element) else v)
   return array
 
 
@@ -107,28 +105,28 @@ def convertRSSFeedToW3PM(filePath, rssFileName, zipFileName, coverFileName):
   parser = etree.XMLParser(remove_comments=True)
   try:
     xdoc =etree.parse(rssPath, parser)
+    rss = xdoc.getroot()
   except (etree.XMLSyntaxError):
     print("Cannot parse this file, XML syntax error")
     return None
 
   # map required info from the rss structure to a new W3C Publication Manifest structure
   title = getStrProperty(xdoc, "/rss/channel/title")
-  id    = getStrProperty(xdoc, "/rss/channel/link[not(@rel)]")
+  id    = getStrProperty(xdoc, "/rss/channel/link")
   if title == None or id == None:
     return None
   pub = Publication(title, id)
 
   # map useful metadata from the rss structure to the W3C Publication
-  pub.url  = getStrProperty(xdoc, "/rss/channel/link[@rel='self']/@href")
-  pub.author = getStrProperty(xdoc, "/rss/channel/author")
-  pub.publisher = getStrProperty(xdoc, "/rss/channel/owner/name")
+  pub.url  = getStrProperty(xdoc, "/rss/channel/atom:link[@rel='self']/@href", nsmap=rss.nsmap)
+  pub.author = getStrProperty(xdoc, "/rss/channel/itunes:author", nsmap=rss.nsmap)
+  pub.publisher = getStrProperty(xdoc, "/rss/channel/itunes:owner/itunesname", nsmap=rss.nsmap)
   pub._description = getStrProperty(xdoc, "/rss/channel/description")
-  pub._subjects = getStrProperties(xdoc, "/rss/channel//category/@text")
+  pub._subjects = getStrProperties(xdoc, "/rss/channel//itunes:category/@text", nsmap=rss.nsmap)
 
   # loop through rss items, create a reading order
-  rss = xdoc.getroot()
   for item in rss.iter("item"):
-    url = getStrProperty(item, "content/@url")
+    url = getStrProperty(item, "media:content/@url", nsmap=rss.nsmap)
     if url == None:
       continue
     # add an item to a set, will be used to control manifest entries vs zip entries
@@ -137,10 +135,11 @@ def convertRSSFeedToW3PM(filePath, rssFileName, zipFileName, coverFileName):
     # the url becomes a file name inside the zip (files are at the root of the archives)
     track = Link(os.path.basename(url))
     track.name = getStrProperty(item, "title")
-    track.encodingFormat = getStrProperty(item, "content/@type")
+    track.encodingFormat = getStrProperty(item, "media:content/@type", nsmap=rss.nsmap)
     # convert duration from hh:mm:ss to PThhHmmMssS
-    duration = getStrProperty(item, "duration").split(":")  
-    track.duration = "PT" + duration[0] + "H" + duration[1] + "M" + duration[2] + "S"
+    duration = getStrProperty(item, "itunes:duration", nsmap=rss.nsmap).split(":")  
+    if len(duration) == 3:
+      track.duration = "PT" + duration[0] + "H" + duration[1] + "M" + duration[2] + "S"
 
     pub.readingOrder.append(track)
 
@@ -262,13 +261,13 @@ def main():
   rssFileName = findFileWithExtension(args.filePath, {".xml"})
   if rssFileName == None:
     print("The source xml file wasn't found")
-    sys.exit()
+    return
 
   # find the zip archive
   zipFileName = findFileWithExtension(args.filePath, {".zip"})
   if zipFileName == None:
     print("The source zip file wasn't found")
-    sys.exit()
+    return
 
   # find the optional cover 
   extensions = {ext for ext in MediaType}
@@ -282,19 +281,16 @@ def main():
   # convert the rss feed into a W3C Publication Manifest
   jpub = convertRSSFeedToW3PM(args.filePath, rssFileName, zipFileName, coverFileName)
   if jpub == None:
-    sys.exit()
+    return
+
+  # save the json file (only for debug purpose)
+  with open("sample/publication.json", "w") as jsonf:
+    jsonf.write(jpub)
 
   # validate the json manifest vs the corresponding schema
   ok = validateManifest(jpub)
   if not ok:
-    sys.exit()
-
-  """
-  # save the json file (only for debug purpose)
-  with open("sample/publication.json", "w") as jsonf:
-    jsonf.write(jpub)
-  sys.exit()
-  """
+    return
 
   # save the json manifest into the zip containing audio tracks
   saveInZip(jpub, args.filePath, zipFileName, coverFileName)
