@@ -44,10 +44,10 @@ Why using jsons?
   * The size of each audiobook is clearly displayed. Consider choosing a small one.  
   * For instance, select some [French poetry](https://librivox.org/compilation-de-poemes-001-by-various/) .
 * On the left side of the page:
-  * Right-click on "Download" beside "Whole book (zip file)" and save the zip file to the directory of you choice.  
-  * Right-click on "RSS" beside "RSS Feed" and save it to the same directory.
+  * Right-click on "Download" beside "Whole book (zip file)" and save the zip file into the directory of your choice (you can keep the file name as-is).  
+  * Right-click on "RSS" beside "RSS Feed" and save it into the same directory __with a .xml extension__ (no other requirement on the file name).
 * On the right side, below the cover image:
-  * Right-click on "Download cover art" and save it to the same directory.
+  * Right-click on "Download cover art" and save it into the same directory (no other requirement on the file name).
 
 ### Use librivox2lpf
 
