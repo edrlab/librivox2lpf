@@ -283,10 +283,12 @@ def main():
   if jpub == None:
     return
 
+  """
   # save the json file (only for debug purpose)
   with open("sample/publication.json", "w") as jsonf:
     jsonf.write(jpub)
-
+  """
+  
   # validate the json manifest vs the corresponding schema
   ok = validateManifest(jpub)
   if not ok:
