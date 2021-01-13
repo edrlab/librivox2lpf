@@ -14,6 +14,7 @@ from lxml import etree
 import jsons
 import json, jsonschema
 from zipfile import ZipFile 
+import shutil
 
 # Publication class
 class Publication:
@@ -144,7 +145,9 @@ def convertRSSFeedToW3PM(filePath, rssFileName, zipFileName, coverFileName):
     pub.readingOrder.append(track)
 
   # compare filesInManifest and filesInZip
-  # error if the manifest references files absent from the zi
+  # error if the manifest references files absent from the zip
+  #print(filesInManifest)
+  #print(filesInZip)
   diffFiles1 = filesInManifest - filesInZip
   if diffFiles1:
     print("The manifest references files absent from the zip")
@@ -218,19 +221,34 @@ def validateManifest(jpub):
 
 
 
-def saveInZip(jpub, filePath, zipFileName, coverFileName):
-  """Save a json manifest into the zip archive, rename the zip as .lpf"""
+def saveInLPF(jpub, filePath, zipFileName, coverFileName):
+  """Save a json manifest, cover and audio tracks into a new zip archive, check the zip integrity"""
 
-  zipPath = os.path.join(filePath, zipFileName)
+  baseName = os.path.splitext(zipFileName)[0]
+  lpfPath = os.path.join(filePath, baseName + ".lpf")
+
+  audioPath = os.path.join(filePath, zipFileName)
   coverPath = os.path.join(filePath, coverFileName) if coverFileName else None
 
-  # open the zip file in append mode, uncompressed
-  with ZipFile(zipPath, mode='a') as zip: 
-    # append the json manifest
+  # create a new zip, use ZIP_STORED
+  # note: the first version was using append but resulted in checksum error with the Go zip reader
+  with ZipFile(lpfPath, mode='w') as zip: 
+    # add the json manifest
     zip.writestr("publication.json", jpub)
-    # append (optionally) the cover
+    # add (optionally) the cover
     if coverFileName:
       zip.write(coverPath, coverFileName)
+    # add audio tracks from the librivox archive
+    # no need to look inside subfolders
+    with ZipFile(audioPath, mode='r') as audio:
+      for track in audio.namelist():
+        if sys.version_info >= (3, 6):
+          with audio.open(track) as from_item:
+            with zip.open(track, 'w') as to_item:
+              shutil.copyfileobj(from_item, to_item)
+        else:
+          # warning, memory intensive
+          zip.writestr(track, audio.read(track))
     # check the integrity of the zip archive
     if zip.testzip():
       print("Zip integrity check failed")
@@ -238,14 +256,10 @@ def saveInZip(jpub, filePath, zipFileName, coverFileName):
 
 
 def finalizeTransformation(filePath, rssFileName, zipFileName, coverFileName):
-  """Rename the zip file to .lpf, delete the rss and cover files"""
-
-  baseName = os.path.splitext(zipFileName)[0]
-  sourcePath = os.path.join(filePath, zipFileName)
-  targetPath = os.path.join(filePath, baseName + ".lpf")
-  os.rename(sourcePath, targetPath)
+  """Delete the source files"""
 
   os.remove(os.path.join(filePath, rssFileName))
+  os.remove(os.path.join(filePath, zipFileName))
   if coverFileName:
     os.remove(os.path.join(filePath, coverFileName))
 
@@ -294,11 +308,11 @@ def main():
   if not ok:
     return
 
-  # save the json manifest into the zip containing audio tracks
-  saveInZip(jpub, args.filePath, zipFileName, coverFileName)
+  # save the json manifest, cover and audio tracks into a .lpf file
+  saveInLPF(jpub, args.filePath, zipFileName, coverFileName)
 
   # finalize the transformation
-  finalizeTransformation(args.filePath, rssFileName, zipFileName, coverFileName)
+  #finalizeTransformation(args.filePath, rssFileName, zipFileName, coverFileName)
 
   # final message
   print("lpf packaged publication generated")
