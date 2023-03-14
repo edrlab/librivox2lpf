@@ -14,7 +14,7 @@ Members of the W3C publication WG (EDRLab is one of them) are now promoting this
 
 In order to test such apps, and also for proving to the industry that generating standard W3C Audiobooks is easy, there is a need for producing samples as automatically as possible, from open content. 
 
-[Librivox](https://librivox.org/) is a non-commercial, non-profit and ad-free project, in which volunteers record chapters of books in the public domain, and which distributes such content in the public domain available, for free. Audio content is [avaiable in multiple languages(https://librivox.org/search?primary_key=0&search_category=language&search_page=1&search_form=get_results)]. This is a marvelous source of content for the samples we need. 
+[Librivox](https://librivox.org/) is a non-commercial, non-profit and ad-free project, in which volunteers record chapters of books in the public domain, and which distributes such content in the public domain available, for free. Audio content is [available in multiple languages](https://librivox.org/search?primary_key=0&search_category=language&search_page=1&search_form=get_results)]. This is a marvelous source of content for the samples we need. 
 
 ## Installation
 
